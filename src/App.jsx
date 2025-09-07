@@ -6,14 +6,15 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    WebApp.ready();
     console.log('initDataUnsafe:', WebApp.initDataUnsafe);
 
     const initUser = async () => {
-      const tgUser = WebApp.initDataUnsafe?.user;
+      const tgUser = WebApp.initDataUnsafe && WebApp.initDataUnsafe.user;
 
       if (!tgUser) {
-        console.warn('Нет данных о пользователе из Telegram');
+        console.log(
+          'Данные пользователя недоступны. Убедитесь, что вы находитесь в контексте веб-приложения Telegram.'
+        );
         return;
       }
 
@@ -22,7 +23,7 @@ function App() {
         .from('users')
         .select('*')
         .eq('telegram_id', tgUser.id)
-        .single();
+        .maybeSingle();
 
       if (selectError) {
         console.error('Ошибка при select:', selectError);
@@ -33,7 +34,7 @@ function App() {
         console.log('Найден в базе:', existingUser);
         setUser(existingUser);
       } else {
-        // создаем нового пользователя
+        // Создаем нового пользователя
         const { data, error: insertError } = await supabase
           .from('users')
           .insert([
@@ -61,15 +62,28 @@ function App() {
   }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      {user ? (
-        <div className="bg-white rounded 2xl shadow-lg p-6 w-80 text-center">
-          <h1 className="text-xl font-bold">Привет, {user.first_name}</h1>
-          <p className="text-gray-600">Ваш Telegram ID: {user.telegram_id}</p>
-        </div>
-      ) : (
-        <p className="text-gray-600">Загрузка ...</p>
-      )}
+    <div className="min-h-screen p-4 text-center text-white">
+      <header>
+        <h1 className="p-4 text-4xl font-semibold">Welcome to your Mini App! 👋</h1>
+        {user ? (
+          <div className="mt-4 flex flex-col items-center justify-center gap-2 text-center">
+            <p>
+              <strong>Ваш Telegram ID:</strong> {user.telegram_id}
+            </p>
+            <p>
+              <strong>Имя:</strong> {user.first_name} {user.last_name}
+            </p>
+            <p>
+              <strong>Никнейм:</strong> @{user.username}
+            </p>
+            <p>
+              <strong>Язык:</strong> {user.language_code}
+            </p>
+          </div>
+        ) : (
+          <p>Загрузка данных пользователя или данные недоступны...</p>
+        )}
+      </header>
     </div>
   );
 }
